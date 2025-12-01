@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>电商定价仪表盘｜保本红线测算（Light）</title>
+  <!-- 为 iPhone 等全面屏设备优化的 viewport 设置 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --panel-bg: #f9fafb;
+      --card-bg: #ffffff;
+      --border-subtle: rgba(148, 163, 184, 0.35);
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --text-soft: #9ca3af;
+      --accent: #2563eb;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #16a34a;
+      --radius-card: 18px;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at top, #e5f2ff 0, #f3f4f6 45%, #e5e7eb 100%);
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1280px;
+      background: #ffffff;
+      border-radius: 24px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: var(--shadow-soft);
+      padding: 20px 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(18px);
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 10px; }
+      .app { padding: 14px 14px 20px; border-radius: 22px; }
+    }
+
+    /* iPhone 17 Pro Max 等手机尺寸适配（竖屏宽度约 430px） */
+    @media (max-width: 480px) {
+      html, body {
+        background: #f3f4f6;
+      }
+
+      body {
+        padding: 8px;
+        align-items: stretch;
+      }
+
+      .app {
+        max-width: 100%;
+        border-radius: 18px;
+        padding: 12px 10px 18px;
+        box-shadow: 0 14px 40px rgba(15, 23, 42, 0.18);
+      }
+
+      .app-header {
+        padding: 2px 2px 6px;
+        gap: 6px;
+      }
+
+      .title-group {
+        gap: 2px;
+      }
+
+      .app-title {
+        font-size: 1.05rem;
+        flex-wrap: wrap;
+      }
+
+      .slogan-pill {
+        font-size: 0.68rem;
+        padding: 2px 8px;
+      }
+
+      .app-subtitle {
+        font-size: 0.78rem;
+      }
+
+      .chip-row {
+        font-size: 0.72rem;
+      }
+
+      .panel {
+        padding: 10px;
+        border-radius: 16px;
+      }
+
+      .card {
+        padding: 10px 10px 8px;
+        border-radius: 14px;
+      }
+
+      .section-title {
+        margin: 4px 0 2px;
+        font-size: 0.82rem;
+      }
+
+      .field-label {
+        font-size: 0.78rem;
+      }
+
+      .input-with-unit input {
+        padding: 6px 28px 6px 8px;
+        font-size: 0.8rem;
+      }
+
+      .unit {
+        font-size: 0.7rem;
+      }
+
+      .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .redline-price {
+        font-size: 1.5rem;
+      }
+
+      .recommend-main {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .recommend-number {
+        font-size: 1.05rem;
+      }
+
+      .profit-amount {
+        font-size: 1.15rem;
+      }
+
+      .roi-number {
+        font-size: 1.1rem;
+      }
+
+      .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .footer-tag {
+        max-width: 100%;
+      }
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 4px 8px;
+      border-bottom: 1px solid rgba(203, 213, 225, 0.9);
+      align-items: center;
+    }
+
+    @media (max-width: 720px) {
+      .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+    }
+
+    .title-group { display: flex; flex-direction: column; gap: 4px; }
+
+    .app-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title span.highlight {
+      background: linear-gradient(120deg, #4f46e5, #2563eb, #16a34a);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .slogan-pill {
+      font-size: 0.75rem;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #2563eb, #22c55e);
+      color: #f9fafb;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+      white-space: nowrap;
+    }
+
+    .app-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .chip {
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #f9fafb;
+    }
+
+    .badge-beta {
+      font-size: 0.78rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      background: #f9fafb;
+    }
+
+    .badge-beta .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: flex-start;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    .panel {
+      border-radius: 20px;
+      padding: 14px;
+      background: var(--panel-bg);
+      border: 1px solid rgba(203, 213, 225, 0.9);
+      box-shadow: none;
+    }
+
+    .panel-input {
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding-bottom: 18px;
+    }
+
+    .panel-output { display:flex; flex-direction:column; gap:12px; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      gap: 10px;
+    }
+    .panel-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-desc {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      margin-top: 2px;
+    }
+
+    .panel-tools {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 4px;
+    }
+    .section-title::before {
+      content: "";
+      width: 16px;
+      height: 2px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #4f46e5);
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border-subtle);
+      padding: 12px 12px 10px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+      position: relative;
+      overflow: hidden;
+      transition:
+        border-color 140ms ease-out,
+        background 140ms ease-out;
+    }
+
+    /* 允许内容溢出的卡片（用于营销任务费说明 / 优惠结构说明） */
+    .card--allow-overflow {
+      overflow: visible;
+    }
+
+    .card:hover {
+      border-color: rgba(148, 163, 184, 0.8);
+      background: #f9fafb;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+    }
+
+    .card-header-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:6px;
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-title .dot-mini {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38bdf8;
+    }
+    .card-subtitle {
+      font-size: 0.76rem;
+      color: var(--text-soft);
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      color: var(--text-muted);
+      background: #f9fafb;
+    }
+    .pill-critical {
+      border-color: rgba(248, 113, 113, 0.85);
+      background: #fef2f2;
+      color: #b91c1c;
+    }
+    .pill-outline { border-style:dashed; }
+
+    .form-grid {
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:8px 10px;
+    }
+    @media (max-width: 420px) {
+      .form-grid { grid-template-columns: minmax(0,1fr); }
+    }
+
+    /* 定价策略专用两列布局（三排） */
+    .pricing-grid{
+      grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+    @media (max-width: 600px){
+      .pricing-grid{
+        grid-template-columns: minmax(0,1fr);
+      }
+    }
+
+    .field { display:flex; flex-direction:column; gap:3px; }
+    .field-full { grid-column: 1 / -1; }
+
+    .field-label {
+      font-size: 0.8rem;
+      color: #111827;
+      display:flex;
+      justify-content:space-between;
+      gap:4px;
+      align-items:center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .field-label span.en {
+      font-size: 0.7rem;
+      color: var(--text-soft);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .input-with-unit { position:relative; }
+
+    .input-with-unit input {
+      width:100%;
+      padding: 7px 30px 7px 9px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: #f9fafb;
+      color: var(--text-main);
+      font-size: 0.82rem;
+      outline:none;
+      font-variant-numeric: tabular-nums;
+      -moz-appearance: textfield;
+      transition:
+        border-color 140ms ease-out,
+        box-shadow 140ms ease-out,
+        background 140ms ease-out;
+    }
+
+    .input-with-unit input::placeholder {
+      color: rgba(148, 163, 184, 0.8);
+    }
+
+    .input-with-unit input:hover {
+      border-color: rgba(129, 140, 248, 0.9);
+      background: #ffffff;
+    }
+
+    .input-with-unit input:focus {
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.55),
+        0 0 0 6px rgba(191, 219, 254, 0.9);
+      background: #ffffff;
+    }
+
+    .unit {
+      position:absolute;
+      right:8px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      pointer-events:none;
+    }
+
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0;}
+    input[type=number] { -moz-appearance:textfield; }
+
+    .hint-row {
+      margin-top:6px;
+      font-size:0.72rem;
+      color:var(--text-soft);
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+    .hint-key {
+      padding:2px 8px;
+      border-radius:999px;
+      background: rgba(191, 219, 254, 0.6);
+      color:#1d4ed8;
+      border:1px solid rgba(59, 130, 246, 0.65);
+      font-size:0.7rem;
+      white-space:nowrap;
+    }
+
+    .output-grid{
+      display:grid;
+      grid-template-rows:auto auto auto auto auto;
+      gap:12px;
+    }
+
+    .top-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+    }
+
+    .strategy-row{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+    @media (max-width: 840px){
+      .strategy-row{ grid-template-columns:minmax(0,1fr); }
+    }
+
+    .final-row,
+    .roi-row {
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+    }
+
+    .hover-reveal {
+      position: relative;
+      align-self: flex-start;
+    }
+    .hover-trigger-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #ffffff;
+      border: 1px dashed rgba(148,163,184,0.9);
+      color: var(--text-muted);
+      cursor: default;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+    .hover-trigger-pill .key {
+      font-size: 0.7rem;
+      padding: 1px 5px;
+      border-radius: 999px;
+      background: rgba(59,130,246,0.15);
+      color: #1d4ed8;
+    }
+    .hover-panel {
+      position: absolute;
+      top: 32px;
+      right: 0;
+      z-index: 30;
+      min-width: 260px;
+      max-width: min(360px, 80vw);
+      display: none;
+    }
+    .hover-reveal:hover .hover-panel,
+    .hover-reveal:focus-within .hover-panel {
+      display: block;
+    }
+
+    .redline-card {
+      position:relative;
+      overflow:hidden;
+    }
+    .redline-card::before {
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:
+        radial-gradient(circle at 0 0, rgba(59, 130, 246, 0.08), transparent 55%),
+        radial-gradient(circle at 100% 30%, rgba(56,189,248,0.12), transparent 60%),
+        radial-gradient(circle at 30% 120%, rgba(52,211,153,0.16), transparent 60%);
+      opacity:0.8;
+      pointer-events:none;
+    }
+    .redline-inner {
+      position:relative;
+      z-index:1;
+      display:grid;
+      grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);
+      gap:10px;
+      align-items:center;
+    }
+    @media (max-width:960px){
+      .redline-inner{ grid-template-columns:minmax(0,1fr); }
+    }
+    .redline-main{ display:flex; flex-direction:column; gap:4px; }
+
+    .redline-label{
+      font-size:0.78rem;
+      text-transform:uppercase;
+      letter-spacing:0.14em;
+      font-weight:500;
+      color:#b91c1c;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .redline-label::before{
+      content:"";
+      width:16px;height:2px;border-radius:999px;
+      background:linear-gradient(90deg,#ef4444,#f97316);
+    }
+
+    .redline-price{
+      font-size:1.8rem;
+      font-weight:700;
+      letter-spacing:0.04em;
+      display:flex;
+      align-items:baseline;
+      gap:4px;
+      font-variant-numeric:tabular-nums;
+    }
+    .redline-price span.small{
+      font-size:0.75rem;
+      color:#9b1c1c;
+      font-weight:500;
+    }
+    .redline-remark{
+      font-size:0.78rem;
+      color:#b91c1c;
+    }
+    .redline-badge{
+      margin-top:4px;
+      font-size:0.7rem;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#fef2f2;
+      color:#b91c1c;
+      border:1px dashed rgba(248,113,113,0.9);
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+    .redline-badge-dot{
+      width:7px;height:7px;border-radius:50%;
+      background:#f97373;
+      box-shadow:0 0 0 3px rgba(248,113,113,0.45);
+    }
+
+    .metrics-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:6px;
+    }
+    @media (max-width:1024px){
+      .metrics-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    .metric{
+      padding:6px 8px;
+      border-radius:10px;
+      background:#f9fafb;
+      border:1px solid rgba(148,163,184,0.6);
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .metric-label{
+      font-size:0.7rem;
+      color:var(--text-muted);
+    }
+    .metric-value{
+      font-size:0.8rem;
+      font-weight:500;
+      font-variant-numeric:tabular-nums;
+    }
+    .metric-tag{
+      font-size:0.68rem;
+      color:#2563eb;
+    }
+
+    .strategy-card{
+      padding:10px 10px 9px;
+      border-radius:12px;
+      background:#f9fafb;
+      box-shadow:none;
+    }
+    .strategy-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:6px;
+      margin-bottom:6px;
+    }
+    .strategy-title{
+      font-size:0.86rem;
+      font-weight:500;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .strategy-title span.chip{
+      font-size:0.7rem;
+      padding:2px 7px;
+      border-radius:999px;
+      background:#ffffff;
+      border:1px solid rgba(148,163,184,0.6);
+      color:var(--text-muted);
+    }
+    .status-tag{
+      font-size:0.7rem;
+      padding:2px 8px;
+      border-radius:999px;
+      background:#ffffff;
+      border:1px solid rgba(148,163,184,0.7);
+      color:var(--text-muted);
+    }
+
+    .strategy-main-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:6px;
+      margin-bottom:4px;
+    }
+    .strategy-price{
+      font-size:1.05rem;
+      font-weight:600;
+      font-variant-numeric:tabular-nums;
+    }
+    .strategy-price-label{
+      font-size:0.72rem;
+      color:var(--text-muted);
+    }
+    .profit-block{ text-align:right; }
+    .profit-label{
+      font-size:0.72rem;
+      color:var(--text-muted);
+    }
+    .profit-value{
+      font-size:1.02rem;
+      font-weight:600;
+      font-variant-numeric:tabular-nums;
+    }
+    .profit-extra{
+      font-size:0.7rem;
+      color:var(--text-muted);
+    }
+    .strategy-footer{
+      margin-top:4px;
+      font-size:0.72rem;
+      color:var(--text-muted);
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+    }
+    .strategy-footer span.em{
+      color:#111827;
+      font-weight:500;
+    }
+
+    .status-loss{
+      border-left:2px solid var(--danger);
+      background:#fef2f2;
+      border-color: rgba(248,113,113,0.85);
+      box-shadow:none;
+    }
+    .status-loss .profit-amount,
+    .status-loss .profit-value{ color:#b91c1c; }
+
+    .status-warning{
+      border-left:2px solid var(--warning);
+      background:#fffbeb;
+      border-color: rgba(245,158,11,0.95);
+      box-shadow:none;
+    }
+
+    .status-profit{
+      border-left:2px solid var(--success);
+      background:#ecfdf3;
+      border-color: rgba(22,163,74,0.95);
+      box-shadow:none;
+    }
+    .status-profit .profit-amount,
+    .status-profit .profit-value{ color:#166534; }
+
+    .highlight-number{
+      font-size:1.1rem;
+      font-weight:600;
+      font-variant-numeric:tabular-nums;
+    }
+    .profit-amount{
+      font-size:1.3rem;
+      font-weight:650;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .recommend-card{
+      background:#f9fafb;
+    }
+    .recommend-main{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-end;
+      margin-top:2px;
+      flex-wrap:wrap;
+    }
+    .recommend-block{ min-width:140px; }
+    .recommend-label{
+      font-size:0.78rem;
+      color:var(--text-soft);
+    }
+    .recommend-number{
+      font-size:1.15rem;
+      font-weight:650;
+      font-variant-numeric:tabular-nums;
+      margin-top:2px;
+    }
+    .recommend-note{
+      margin-top:4px;
+      font-size:0.76rem;
+      color:var(--text-soft);
+    }
+
+    .final-main{
+      font-size:0.86rem;
+      margin-bottom:4px;
+    }
+    .final-main span.label{ color:var(--text-soft); }
+    .final-main .highlight-number{
+      font-size:1.45rem;
+      font-weight:650;
+    }
+    .final-lines{
+      font-size:0.8rem;
+      color:var(--text-soft);
+    }
+    .final-lines div{ margin-top:2px; }
+    .final-gap{
+      margin-top:4px;
+      font-size:0.76rem;
+      color:var(--text-soft);
+    }
+    .final-gap strong{ font-variant-numeric:tabular-nums; }
+
+    .roi-card{
+      background:#ecfdf3;
+      border-color: rgba(22,163,74,0.9);
+    }
+    .roi-main{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+      margin-top:2px;
+    }
+    @media (max-width: 600px){
+      .roi-main{ grid-template-columns:minmax(0,1fr); }
+    }
+    .roi-label{
+      font-size:0.78rem;
+      color:#166534;
+    }
+    .roi-number{
+      font-size:1.25rem;
+      font-weight:650;
+      font-variant-numeric:tabular-nums;
+      margin-top:2px;
+      color:#15803d;
+    }
+    .roi-sub{
+      font-size:0.7rem;
+      color:#16a34a;
+      margin-top:2px;
+    }
+    .roi-note{
+      margin-top:6px;
+      font-size:0.78rem;
+      color:#064e3b;
+    }
+
+    .note-card{
+      font-size:0.74rem;
+      color:var(--text-muted);
+      background:#f9fafb;
+    }
+    .note-card ul{
+      margin:4px 0 0;
+      padding-left:16px;
+    }
+    .note-card li{ margin-top:3px; }
+    .note-card code{
+      background:#e5e7eb;
+      border-radius:4px;
+      padding:1px 4px;
+      border:1px solid rgba(148,163,184,0.7);
+      font-size:0.7rem;
+    }
+
+    .error-bar {
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.76rem;
+      background: linear-gradient(90deg, #fef2f2, #fee2e2);
+      color: #b91c1c;
+      border: 1px solid rgba(239, 68, 68, 0.85);
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-bar::before {
+      content: "⚠";
+      font-size: 0.85rem;
+    }
+
+    .footer {
+      margin-top: 4px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+    .footer-tag{
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px dashed rgba(148,163,184,0.8);
+      background:#f9fafb;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <div class="title-group">
+      <div class="app-title">
+        <span class="highlight">电商定价仪表盘</span>
+        <span style="font-size:0.86rem;color:#6b7280;">Pricing Dashboard</span>
+        <span class="slogan-pill">盈亏一眼看穿</span>
+      </div>
+      <div class="app-subtitle">
+        填写左侧参数 → 右侧实时算出 <b>保本红线价</b>、<b>卷低价</b> 和 <b>溢价</b> 的利润表现。
+      </div>
+      <div class="chip-row">
+        <span class="chip">红线价 = 生死线</span>
+        <span class="chip">负数 = 亏本 · 红色预警</span>
+        <span class="chip">达到目标利润 = 绿色安全区</span>
+      </div>
+    </div>
+    <div class="badge-beta">
+      <span class="dot"></span>
+      实时计算 · 毫秒级响应
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel panel-input">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">INPUTS · 输入参数</div>
+          <div class="panel-desc">左侧填写业务数据，右侧结果实时刷新。</div>
+        </div>
+      </div>
+
+      <div class="section-title">基础成本参数</div>
+      <div class="card card--allow-overflow">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="cost">
+              <span>进货价</span><span class="en">Cost</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="cost" type="number" step="0.01" value="22.74" placeholder="用户填写">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="task-cost">
+              <span>营销任务费/单</span><span class="en">Task</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="task-cost" type="number" step="0.01" placeholder="例如 0.35">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="shipping">
+              <span>发货运费</span><span class="en">Ship</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="shipping" type="number" step="0.01" value="2.4">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="loss">
+              <span>退货损耗</span><span class="en">Loss</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="loss" type="number" step="0.01" value="3.9">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="ad-cost">
+              <span>推广费/单</span><span class="en">Ad</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="ad-cost" type="number" step="0.01" value="13.4">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="real-ad-cost">
+              <span>真实推广成本/单</span><span class="en">Real Ad</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="real-ad-cost" type="number" step="0.01" readonly>
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="commission">
+              <span>平台佣金</span><span class="en">Fee %</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="commission" type="number" step="0.1" placeholder="例如 5">
+              <span class="unit">%</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="tax">
+              <span>税金</span><span class="en">Tax %</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="tax" type="number" step="0.1" placeholder="例如 3">
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hint-row">
+          <span>
+            佣金 / 税金按<span style="color:#111827;">成交金额百分比</span>填写；营销任务费按单件平均值填写。
+          </span>
+          <div class="hover-reveal">
+            <div class="hover-trigger-pill">
+              营销任务费:7 ÷ 20 ≈ 0.35 元/单
+              <span class="key">悬停查看</span>
+            </div>
+            <div class="card note-card hover-panel">
+              <div class="card-header-row">
+                <div class="card-title">
+                  <span class="dot-mini"></span> 营销任务费说明
+                </div>
+              </div>
+              <ul style="margin:4px 0 0;padding-left:18px;">
+                <li>
+                  爆款：20:1刷单维护评价
+                  <ul style="margin:4px 0 0;padding-left:18px;">
+                    <li>不拖单精刷是7元/单，那么20:1，7÷20≈0.35元/单 ，均摊到每卖出1单的刷单费是0.35元/单。</li>
+                  </ul>
+                </li>
+                <li>
+                  新品：上架1个新品=12.4元刷单费
+                  <ul style="margin:4px 0 0;padding-left:18px;">
+                    <li>每个月上60款，数据款是30%，那么数据款20款，上新款40款。</li>
+                    <li>数据款单独精刷7元/单 + 上新款一拖二13元/单，一个月共计刷单费是742元。</li>
+                    <li>742元÷60款≈12.4元/款。</li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">退款率</div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="refund-rate">
+              <span>仅退款率</span><span class="en">Refund</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="refund-rate" type="number" step="0.1" value="18">
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="return-rate">
+              <span>退货率</span><span class="en">Return</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="return-rate" type="number" step="0.1" value="27">
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">定价策略</div>
+      <div class="card">
+        <div class="form-grid pricing-grid">
+          <div class="field">
+            <label class="field-label" for="target-profit">
+              <span>目标利润</span><span class="en">Target</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="target-profit" type="number" step="0.01" value="10">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="recommended-price">
+              <span>建议售价</span><span class="en">Recommended</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="recommended-price" type="number" readonly>
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="discount">
+              <span>跟随价差</span><span class="en">Discount</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="discount" type="number" step="0.01" value="3">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="premium">
+              <span>差异价差</span><span class="en">Premium</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="premium" type="number" step="0.01" value="10">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="competitor-price">
+              <span>同行价格</span><span class="en">Peer</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="competitor-price" type="number" step="0.01" placeholder="用户填写">
+              <span class="unit">元</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="final-price">
+              <span>最终售价</span><span class="en">Final</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="final-price" type="number" step="0.01" value="43.7">
+              <span class="unit">元</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">优惠组合</div>
+      <!-- 保持 card--allow-overflow，避免气泡被裁切 -->
+      <div class="card card--allow-overflow">
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label" for="newbie-coupon">
+              <span>新人券</span><span class="en">New User</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="newbie-coupon" type="number" step="0.01" value="3">
+              <span class="unit">元</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="single-discount">
+              <span>单品直降</span><span class="en">Single %</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="single-discount" type="number" step="0.1" value="15">
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="promo-discount">
+              <span>大促折扣</span><span class="en">Campaign %</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="promo-discount" type="number" step="0.1" placeholder="用户填写">
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="list-price">
+              <span>推导标价</span><span class="en">List</span>
+            </label>
+            <div class="input-with-unit">
+              <input id="list-price" type="number" readonly>
+              <span class="unit">元</span>
+            </div>
+          </div>
+        </div>
+        <!-- 悬停气泡：文本改为无序列表 -->
+        <div class="hint-row">
+          <div class="hover-reveal">
+            <div class="hover-trigger-pill">
+              优惠结构公式
+              <span class="key">悬停查看</span>
+            </div>
+            <div class="card note-card hover-panel">
+              <div class="card-header-row">
+                <div class="card-title">
+                  <span class="dot-mini"></span> 优惠结构公式
+                </div>
+              </div>
+              <ul style="margin:4px 0 0;padding-left:18px;">
+                <li>标价 − 新人券 − 标价×直降 − 标价×大促 = 最终售价。</li>
+                <li>改任一项 → 自动反推标价。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hint-row" style="margin-top:8px;">
+        <span>所有参数按单件口径填写。</span>
+      </div>
+    </section>
+
+    <section class="panel panel-output">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">DASHBOARD · 结果仪表盘</div>
+          <div class="panel-desc">核心红线价与利润，一目了然。</div>
+        </div>
+        <div class="panel-tools">
+          <div class="hover-reveal">
+            <div class="hover-trigger-pill">
+              核心指标 Snapshot
+              <span class="key">悬停查看</span>
+            </div>
+            <div class="card hover-panel">
+              <div class="card-header-row">
+                <div class="card-title">
+                  <span class="dot-mini"></span> 核心指标 Snapshot
+                </div>
+                <span class="pill pill-outline">Formula Based</span>
+              </div>
+              <div class="metrics-grid">
+                <div class="metric">
+                  <div class="metric-label">有效订单率</div>
+                  <div class="metric-value" id="metric-effective-rate">0.0%</div>
+                  <div class="metric-tag">(1 - 仅退款率) × (1 - 退货率)</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">推广费分摊系数</div>
+                  <div class="metric-value" id="metric-ad-factor">--</div>
+                  <div class="metric-tag">实际每成一单的广告倍数</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">发货系数</div>
+                  <div class="metric-value" id="metric-ship-factor">--</div>
+                  <div class="metric-tag">每成交一单发出包裹数</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">物流成本分摊</div>
+                  <div class="metric-value" id="metric-logistics">--</div>
+                  <div class="metric-tag">(运费 + 退货损耗 × 退货率) × 发货系数</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hover-reveal">
+            <div class="hover-trigger-pill">
+              公式说明 · FORMULAS
+              <span class="key">悬停查看</span>
+            </div>
+            <div class="card note-card hover-panel">
+              <div class="card-header-row">
+                <div class="card-title">
+                  <span class="dot-mini"></span> 公式说明 · FORMULAS
+                </div>
+              </div>
+              <ul>
+                <li>有效订单率 = <code>(1 - 仅退款率) × (1 - 退货率)</code></li>
+                <li>推广费分摊系数 = <code>1 ÷ 有效订单率</code></li>
+                <li>发货系数 = <code>1 ÷ (1 - 退货率)</code></li>
+                <li>物流成本分摊 = <code>(发货运费 + 退货损耗 × 退货率) × 发货系数</code></li>
+                <li>固定成本 = <code>进货价 + 推广费 × 分摊系数 + 物流成本分摊 + 营销任务费</code></li>
+                <li>保本红线价 = <code>固定成本 ÷ (1 - 平台佣金率 - 税金率)</code></li>
+                <li>单单净赚 = <code>售价 × (1 - 平台佣金率 - 税金率) - 固定成本</code></li>
+                <li>优惠结构：<code>标价 - 新人券 - 标价×单品直降 - 标价×大促折扣 = 最终售价</code></li>
+              </ul>
+              <p style="margin-top:6px;">计算均在浏览器本地完成。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="errorBar" class="error-bar"></div>
+
+      <div class="output-grid">
+        <div class="top-row">
+          <section class="card redline-card">
+            <div class="redline-inner">
+              <div class="redline-main">
+                <div class="redline-label">BREAKEVEN LINE · 保本红线</div>
+                <div class="redline-price">
+                  <span id="breakeven-price-display">¥0.00</span>
+                  <span class="small">/ 单</span>
+                </div>
+                <div class="redline-remark">
+                  低于此价格，即使出单越多，<b>亏得越快</b>。
+                </div>
+                <div class="redline-badge">
+                  <span class="redline-badge-dot"></span>
+                  生死线：进货 + 推广 + 真实运费 + 营销任务 + 平台佣金税金
+                </div>
+              </div>
+              <div>
+                <div class="metrics-grid">
+                  <div class="metric">
+                    <div class="metric-label">有效订单率</div>
+                    <div class="metric-value" id="effective-rate-display">0%</div>
+                    <div class="metric-tag">(1 - 仅退款率) × (1 - 退货率)</div>
+                  </div>
+                  <div class="metric">
+                    <div class="metric-label">推广费分摊系数</div>
+                    <div class="metric-value" id="ad-factor-display">0.00×</div>
+                    <div class="metric-tag">实际每成一单广告倍数</div>
+                  </div>
+                  <div class="metric">
+                    <div class="metric-label">发货系数</div>
+                    <div class="metric-value" id="ship-factor-display">0.00×</div>
+                    <div class="metric-tag">每成交一单发出包裹数</div>
+                  </div>
+                  <div class="metric">
+                    <div class="metric-label">物流成本分摊</div>
+                    <div class="metric-value" id="logistics-display">¥0.00</div>
+                    <div class="metric-tag">(运费 + 损耗×退货率) × 发货系数</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 先显示“TARGET PRICE · 目标利润建议售价” -->
+        <div class="card recommend-card" id="recommend-card">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span class="dot-mini"></span> TARGET PRICE · 目标利润建议售价
+            </div>
+            <span class="pill pill-outline" id="recommend-pill">等待目标利润</span>
+          </div>
+          <div class="recommend-main">
+            <div class="recommend-block">
+              <div class="recommend-label">目标利润</div>
+              <div class="recommend-number" id="recommend-target">¥0.00 / 单</div>
+            </div>
+            <div class="recommend-block">
+              <div class="recommend-label" id="recommend-price-label">建议售价</div>
+              <div class="recommend-number" id="recommend-price">¥0.00</div>
+            </div>
+          </div>
+          <div class="recommend-note" id="recommend-note">
+            填写左侧「目标利润」后，这里会给出实现该利润所需的建议售价。
+          </div>
+        </div>
+
+        <!-- 再显示“STRATEGY REVIEW · 检视策略” -->
+        <section class="card">
+          <div class="card-header-row">
+            <div class="card-title">
+              <span class="dot-mini"></span> STRATEGY REVIEW · 检视策略
+            </div>
+          </div>
+          <div class="strategy-row">
+            <div class="strategy-card" id="follow-card">
+              <div class="strategy-header">
+                <div class="strategy-title">
+                  卷低价
+                  <span class="chip">跟随同行</span>
+                </div>
+                <div class="status-tag" id="follow-status">等待输入</div>
+              </div>
+              <div class="strategy-main-row">
+                <div>
+                  <div class="strategy-price" id="follow-price">¥0.00</div>
+                  <div class="strategy-price-label">跟随价 = 同行价 - 价差</div>
+                </div>
+                <div class="profit-block">
+                  <div class="profit-label">单单净赚</div>
+                  <div class="profit-value profit-amount" id="follow-profit">¥0.00</div>
+                  <div class="profit-extra">
+                    利润率 <span id="follow-margin">--</span>
+                  </div>
+                </div>
+              </div>
+              <div class="strategy-footer">
+                <span>低于保本红线会触发<span class="em">亏损预警</span>。</span>
+              </div>
+            </div>
+
+            <div class="strategy-card" id="premium-card">
+              <div class="strategy-header">
+                <div class="strategy-title">
+                  差异化
+                  <span class="chip">溢价销售</span>
+                </div>
+                <div class="status-tag" id="premium-status">等待输入</div>
+              </div>
+              <div class="strategy-main-row">
+                <div>
+                  <div class="strategy-price" id="premium-price">¥0.00</div>
+                  <div class="strategy-price-label">溢价价 = 同行价 + 价差</div>
+                </div>
+                <div class="profit-block">
+                  <div class="profit-label">单单净赚</div>
+                  <div class="profit-value profit-amount" id="premium-profit">¥0.00</div>
+                  <div class="profit-extra">
+                    利润率 <span id="premium-margin">--</span>
+                  </div>
+                </div>
+              </div>
+              <div class="strategy-footer">
+                <span>溢价过高可能影响转化。</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="final-row">
+          <div class="card profit-card" id="final-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span class="dot-mini"></span> FINAL DECISION · 最终售价
+              </div>
+              <span class="pill pill-critical" id="final-pill">等待输入</span>
+            </div>
+            <div class="final-main">
+              <span class="label">决定售价：</span>
+              <span class="highlight-number" id="final-price-display">¥0.00</span>
+            </div>
+            <div class="final-lines">
+              <div>单单净赚：<span class="profit-amount" id="final-profit">¥0.00</span></div>
+              <div>利润率：<span id="final-margin">--</span></div>
+              <div>目标利润：<span id="target-profit-display">¥0.00</span></div>
+              <div>反推标价（原价）：<span id="list-price-display">¥0.00</span></div>
+            </div>
+            <div class="final-gap" id="list-price-equation" style="display:none;">
+              标价 − 新人券 − 标价×直降 − 标价×大促折扣 = 最终售价。
+            </div>
+            <div class="final-gap" id="final-gap-line" style="display:none;">
+              这里将显示：是<b>亏本警告</b>，还是<b>健康盈利</b>。
+            </div>
+          </div>
+        </div>
+
+        <div class="roi-row">
+          <div class="card roi-card" id="roi-card">
+            <div class="card-header-row">
+              <div class="card-title">
+                <span class="dot-mini"></span> ROI · 投产比视角
+              </div>
+              <span class="pill pill-outline">广告投产比</span>
+            </div>
+            <div class="roi-main">
+              <div>
+                <div class="roi-label">推广保本 ROI</div>
+                <div class="roi-number" id="roi-breakeven">--</div>
+                <div class="roi-sub" id="roi-breakeven-adcost">
+                  填写售价、成本和转化参数后，将展示对应的保本推广费。
+                </div>
+              </div>
+              <div>
+                <div class="roi-label">平台 ROI</div>
+                <div class="roi-number" id="roi-gmv">--</div>
+                <div class="roi-sub">售价 ÷ 输入推广费</div>
+              </div>
+              <div>
+                <div class="roi-label">利润投产比</div>
+                <div class="roi-number" id="roi-profit">--</div>
+                <div class="roi-sub">净利润 ÷ 广告成本</div>
+              </div>
+            </div>
+            <div class="roi-note" id="roi-note">
+              补充推广费与退款/退货率后，可看到每 1 元广告的大致回报，并与「推广保本 ROI」对比。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span class="footer-tag">公式严格执行：有效订单率 / 推广费分摊系数 / 发货系数 / 物流成本分摊 / 营销任务费 / 保本红线价 / 单单净赚</span>
+    <span>提示：所有计算基于单件维度。</span>
+  </footer>
+</div>
+
+<script>
+  function getNumber(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    const v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function isFilled(id) {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    return el.value.trim() !== '';
+  }
+
+  function formatMoney(v) {
+    if (!isFinite(v)) return '¥0.00';
+    return '¥' + v.toFixed(2);
+  }
+  function formatPercent1(v) {
+    if (!isFinite(v)) return '--';
+    return (v*100).toFixed(1) + '%';
+  }
+  function formatPercent(v) {
+    if (!isFinite(v)) return '--';
+    return v.toFixed(1) + '%';
+  }
+  function calcMargin(profit, price) {
+    if (!isFinite(profit) || !isFinite(price) || price <= 0) return '--';
+    return formatPercent(profit/price*100);
+  }
+  function clearProfitClasses(el) {
+    el.classList.remove('status-loss','status-warning','status-profit');
+  }
+  function formatRatio(v) {
+    if (!isFinite(v) || v <= 0) return '--';
+    return v.toFixed(2) + '×';
+  }
+
+  function updateProfitCard(cardId, statusSpanId, profit, targetProfit) {
+    const card = document.getElementById(cardId);
+    const statusEl = document.getElementById(statusSpanId);
+    clearProfitClasses(card);
+
+    if (!isFinite(profit)) {
+      statusEl.textContent = '数据异常，请检查输入。';
+      return;
+    }
+    const target = isFinite(targetProfit) ? targetProfit : 0;
+
+    if (profit <= 0) {
+      card.classList.add('status-loss');
+      statusEl.textContent = '亏本警告';
+    } else if (target > 0 && profit < target) {
+      card.classList.add('status-warning');
+      statusEl.textContent = '略有盈利';
+    } else {
+      card.classList.add('status-profit');
+      statusEl.textContent = '利润可观';
+    }
+  }
+
+  function updateFinalStatus(finalProfit, targetProfit) {
+    const card = document.getElementById('final-card');
+    const pill = document.getElementById('final-pill');
+    const gap = document.getElementById('final-gap-line');
+    clearProfitClasses(card);
+
+    if (!isFinite(finalProfit)) {
+      pill.textContent = '数据异常';
+      if (gap) gap.innerHTML = '请检查左侧输入参数（尤其是退款 / 退货率及佣金 / 税金）。';
+      return;
+    }
+    const target = isFinite(targetProfit) ? targetProfit : 0;
+
+    if (finalProfit <= 0) {
+      card.classList.add('status-loss');
+      pill.textContent = '亏本警告';
+      if (gap) gap.innerHTML = '当前每成交一单 <strong>在亏钱</strong>，请立刻调价或优化成本结构。';
+    } else if (target > 0 && finalProfit < target) {
+      card.classList.add('status-warning');
+      pill.textContent = '略有盈利';
+      const diff = target - finalProfit;
+      if (gap) gap.innerHTML = '已盈利，但尚未达到目标利润，还差 <strong>' + formatMoney(diff) + '</strong> / 单。';
+    } else {
+      card.classList.add('status-profit');
+      pill.textContent = '健康盈利';
+      if (target > 0) {
+        const diff = finalProfit - target;
+        if (gap) gap.innerHTML = '单单净赚已超过目标利润 <strong>' + formatMoney(diff) + '</strong>，处于绿色安全区。';
+      } else {
+        if (gap) gap.innerHTML = '尚未设置目标利润，但当前为 <strong>正利润</strong>，处于绿色安全区。';
+      }
+    }
+  }
+
+  function calculate() {
+    const errorBar = document.getElementById('errorBar');
+    errorBar.style.display = 'none';
+    errorBar.textContent = '';
+
+    // --- 1. 获取输入 ---
+    const cost = getNumber('cost');
+    const adCost = getNumber('ad-cost'); // 用户填写的推广费
+    const shipping = getNumber('shipping');
+    const loss = getNumber('loss');
+    const taskCost = getNumber('task-cost');
+
+    const refundRatePct = getNumber('refund-rate');
+    const returnRatePct = getNumber('return-rate');
+    const refundRate = refundRatePct / 100;
+    const returnRate = returnRatePct / 100;
+
+    const targetProfit = getNumber('target-profit');
+    const competitorPrice = getNumber('competitor-price');
+    const discount = getNumber('discount');
+    const premium = getNumber('premium');
+    const finalPrice = getNumber('final-price');
+
+    const newbieCoupon = getNumber('newbie-coupon');
+    const singleDiscountPct = getNumber('single-discount');
+    const promoDiscountPct = getNumber('promo-discount');
+    const singleDiscountRate = singleDiscountPct/100;
+    const promoDiscountRate = promoDiscountPct/100;
+
+    const commissionPct = getNumber('commission');
+    const taxPct = getNumber('tax');
+    const commissionRate = commissionPct/100;
+    const taxRate = taxPct/100;
+
+    const commissionFilled = isFilled('commission');
+    const taxFilled = isFilled('tax');
+
+    let errors = [];
+
+    // --- 2. 核心漏斗计算 ---
+    // 有效订单率 (Success Rate)
+    let effectiveOrderRate = (1 - refundRate) * (1 - returnRate);
+    if (effectiveOrderRate < 0) effectiveOrderRate = 0;
+    if (effectiveOrderRate <= 0) {
+      errors.push('有效订单率为 0，无法分摊推广费，请降低退款率或退货率。');
+    }
+
+    // 推广费分摊系数
+    const adFactor = effectiveOrderRate > 0 ? 1 / effectiveOrderRate : Infinity;
+
+    // 发货系数 & 物流分摊
+    const shipDenom = (1 - returnRate);
+    if (shipDenom <= 0) {
+      errors.push('退货率为 100%，无法计算发货系数，请调整退货率。');
+    }
+    const shipFactor = shipDenom > 0 ? 1 / shipDenom : Infinity;
+
+    const logisticsShare = (shipping + loss * returnRate) * (isFinite(shipFactor) ? shipFactor : 0);
+
+    // 固定成本（不含广告）和含广告的总成本
+    const fixedCostNoAd = cost + logisticsShare + taskCost;
+    const fixedCost = fixedCostNoAd + adCost * (isFinite(adFactor) ? adFactor : 0);
+
+    // 平台扣点后到手率
+    const takeHomeRate = 1 - commissionRate - taxRate;
+    if (takeHomeRate <= 0) {
+      errors.push('平台佣金率 + 税金率 ≥ 100%，无法计算到手金额，请调整。');
+    }
+
+    // 保本红线价 (Breakeven Price)
+    const breakevenPrice = (takeHomeRate > 0) ? fixedCost / takeHomeRate : Infinity;
+
+    // 根据售价计算利润
+    function profitFor(price) {
+      if (!isFinite(price)) return NaN;
+      return price * takeHomeRate - fixedCost;
+    }
+
+    const followPrice = Math.max(0, competitorPrice - discount);
+    const premiumPrice = Math.max(0, competitorPrice + premium);
+    const followProfit = profitFor(followPrice);
+    const premiumProfit = profitFor(premiumPrice);
+    const finalProfit = profitFor(finalPrice);
+
+    // 折扣结构校验
+    const discountRateSum = singleDiscountRate + promoDiscountRate;
+    if (finalPrice > 0 && (newbieCoupon>0 || singleDiscountRate>0 || promoDiscountRate>0) && discountRateSum >= 1) {
+      errors.push('单品直降 + 大促折扣 ≥ 100%，无法根据当前折扣结构反推标价。');
+    }
+
+    if (errors.length) {
+      errorBar.style.display = 'flex';
+      errorBar.textContent = errors.join(' ');
+    }
+
+    // --- 3. 渲染核心指标 ---
+    document.getElementById('breakeven-price-display').textContent = formatMoney(breakevenPrice);
+    document.getElementById('effective-rate-display').textContent = formatPercent1(effectiveOrderRate);
+    document.getElementById('ad-factor-display').textContent = isFinite(adFactor)?adFactor.toFixed(2)+'×':'--';
+    document.getElementById('ship-factor-display').textContent = isFinite(shipFactor)?shipFactor.toFixed(2)+'×':'--';
+    document.getElementById('logistics-display').textContent = formatMoney(logisticsShare);
+
+    document.getElementById('metric-effective-rate').textContent = formatPercent1(effectiveOrderRate);
+    document.getElementById('metric-ad-factor').textContent = isFinite(adFactor)?adFactor.toFixed(2):'--';
+    document.getElementById('metric-ship-factor').textContent = isFinite(shipFactor)?shipFactor.toFixed(2):'--';
+    document.getElementById('metric-logistics').textContent = formatMoney(logisticsShare);
+
+    // 策略卡片：卷低价 & 差异化
+    document.getElementById('follow-price').textContent = formatMoney(followPrice);
+    document.getElementById('follow-profit').textContent = formatMoney(followProfit);
+    document.getElementById('follow-margin').textContent = calcMargin(followProfit, followPrice);
+
+    document.getElementById('premium-price').textContent = formatMoney(premiumPrice);
+    document.getElementById('premium-profit').textContent = formatMoney(premiumProfit);
+    document.getElementById('premium-margin').textContent = calcMargin(premiumProfit, premiumPrice);
+
+    updateProfitCard('follow-card', 'follow-status', followProfit, targetProfit);
+    updateProfitCard('premium-card', 'premium-status', premiumProfit, targetProfit);
+
+    const followStatus = document.getElementById('follow-status');
+    const premiumStatus = document.getElementById('premium-status');
+    if (!isFinite(followProfit)) {
+      followStatus.textContent = '参数异常，请检查退款 / 退货率。';
+    } else if (followProfit <= 0) {
+      followStatus.textContent = '卷到这个价已经亏本，严禁长期执行。';
+    } else if (targetProfit > 0 && followProfit < targetProfit) {
+      followStatus.textContent = '有盈利但未达目标，可作为短期冲量价。';
+    } else {
+      followStatus.textContent = '在当前成本结构下，卷价仍然可以健康盈利。';
+    }
+
+    if (!isFinite(premiumProfit)) {
+      premiumStatus.textContent = '参数异常，请检查退款 / 退货率。';
+    } else if (premiumProfit <= 0) {
+      premiumStatus.textContent = '溢价过高或成本过重，反而出现亏本。';
+    } else if (targetProfit > 0 && premiumProfit < targetProfit) {
+      premiumStatus.textContent = '略有盈利，但溢价并未显著提升利润。';
+    } else {
+      premiumStatus.textContent = '差异化溢价，可以带来不错的利润空间。';
+    }
+
+    // 建议售价卡片
+    const takeHomeRateSafe = takeHomeRate > 0 ? takeHomeRate : NaN;
+    const targetPrice = (takeHomeRateSafe && isFinite(targetProfit) && targetProfit>0)
+      ? (fixedCost + targetProfit) / takeHomeRateSafe
+      : NaN;
+    const recInput = document.getElementById('recommended-price');
+    if (isFinite(targetPrice)) recInput.value = targetPrice.toFixed(2);
+    else recInput.value = '';
+
+    const recPriceLabelEl = document.getElementById('recommend-price-label');
+    if (recPriceLabelEl) {
+      let labelText;
+      if (commissionFilled && taxFilled) {
+        labelText = '建议售价（含佣金/税后）';
+      } else if (!commissionFilled && !taxFilled) {
+        labelText = '建议售价（不含佣金/税前）';
+      } else if (commissionFilled && !taxFilled) {
+        labelText = '建议售价（含佣金/税前）';
+      } else {
+        labelText = '建议售价（不含佣金/税后）';
+      }
+      recPriceLabelEl.textContent = labelText;
+    }
+
+    const recTarget = document.getElementById('recommend-target');
+    const recPrice = document.getElementById('recommend-price');
+    const recNote = document.getElementById('recommend-note');
+    const recPill = document.getElementById('recommend-pill');
+    recTarget.textContent = formatMoney(targetProfit) + ' / 单';
+    recPrice.textContent = formatMoney(targetPrice);
+    if (targetProfit > 0 && isFinite(targetPrice)) {
+      recPill.textContent = '已计算';
+      recNote.textContent =
+        '在当前成本与退款/退货率下，想实现每单 ' +
+        formatMoney(targetProfit) +
+        ' 的利润，建议售价约为 ' +
+        formatMoney(targetPrice) +
+        '。';
+    } else {
+      recPill.textContent = '等待目标利润';
+      recNote.textContent = '在左侧设置目标利润后，这里会给出达成该利润目标所需的建议售价。';
+    }
+
+    // 最终售价卡片
+    document.getElementById('final-price-display').textContent = formatMoney(finalPrice);
+    document.getElementById('final-profit').textContent = formatMoney(finalProfit);
+    document.getElementById('final-margin').textContent = calcMargin(finalProfit, finalPrice);
+    document.getElementById('target-profit-display').textContent = formatMoney(targetProfit);
+
+    const listPriceEl = document.getElementById('list-price');
+    const listPriceDisplay = document.getElementById('list-price-display');
+    const listEq = document.getElementById('list-price-equation');
+    const discountDenom = 1 - singleDiscountRate - promoDiscountRate;
+    let listPrice = NaN;
+    if ((finalPrice>0 || newbieCoupon>0) && discountDenom > 0) {
+      listPrice = (finalPrice + newbieCoupon)/discountDenom;
+    }
+    if (isFinite(listPrice) && listPrice>0) {
+      listPriceEl.value = listPrice.toFixed(2);
+      listPriceDisplay.textContent = formatMoney(listPrice);
+      const fmt = v => isFinite(v)&&v!==0 ? v.toFixed(1).replace(/\.0$/,'')+'%' : '0%';
+      if (listEq) {
+        listEq.textContent =
+          '标价 '+formatMoney(listPrice)+
+          ' - 新人券 '+formatMoney(newbieCoupon)+
+          ' - 标价×'+fmt(singleDiscountPct)+
+          ' - 标价×'+fmt(promoDiscountPct)+
+          ' ≈ 最终售价 '+formatMoney(finalPrice);
+      }
+    } else {
+      listPriceEl.value = '';
+      listPriceDisplay.textContent = '¥0.00';
+      if (listEq) {
+        if (discountDenom <= 0 && (singleDiscountPct || promoDiscountPct)) {
+          listEq.textContent = '提示：单品直降 + 大促折扣 ≥ 100%，无法根据当前折扣结构反推标价。';
+        } else {
+          listEq.textContent = '填写“最终售价”和优惠组合后，系统将自动反推建议标价。';
+        }
+      }
+    }
+
+    updateFinalStatus(finalProfit, targetProfit);
+
+    // --- 4. 计算 ROI 相关 ---
+
+    // 真实推广成本 (Real Ad Cost) = 输入推广费 / 有效订单率
+    const adCostReal = effectiveOrderRate > 0 ? adCost / effectiveOrderRate : Infinity;
+
+    // 回填真实推广费到输入框
+    const realAdCostInput = document.getElementById('real-ad-cost');
+    if (realAdCostInput) {
+      realAdCostInput.value = (isFinite(adCostReal) && adCostReal > 0)
+        ? adCostReal.toFixed(2)
+        : '';
+    }
+
+    // A. 利润为0时的真实广告费
+    const maxRealAdCost = (finalPrice > 0 && takeHomeRate > 0)
+      ? (finalPrice * takeHomeRate) - fixedCostNoAd
+      : NaN;
+
+    // B. 对应的“最大输入推广费”
+    const maxInputAdCost = (isFinite(maxRealAdCost) && maxRealAdCost > 0 && effectiveOrderRate > 0)
+      ? maxRealAdCost * effectiveOrderRate
+      : 0;
+
+    // C. 保本 ROI
+    const breakevenROI = (maxInputAdCost > 0) ? finalPrice / maxInputAdCost : 0;
+
+    // D. 当前平台 ROI
+    const currentPlatformROI = (adCost > 0) ? finalPrice / adCost : 0;
+
+    // 利润投产比
+    const profitROI = (adCost > 0) ? finalProfit / adCost : 0;
+
+    // --- 5. 渲染 ROI 卡片 ---
+    const roiGmvEl = document.getElementById('roi-gmv');
+    const roiBreakevenEl = document.getElementById('roi-breakeven');
+    const roiProfitEl = document.getElementById('roi-profit');
+    const roiNote = document.getElementById('roi-note');
+    const roiBreakevenAdEl = document.getElementById('roi-breakeven-adcost');
+
+    roiGmvEl.textContent = formatRatio(currentPlatformROI);
+    roiProfitEl.textContent = formatRatio(profitROI);
+
+    if (isFinite(breakevenROI) && breakevenROI > 0) {
+      roiBreakevenEl.textContent = formatRatio(breakevenROI);
+    } else {
+      roiBreakevenEl.textContent = '无法保本';
+    }
+
+    if (isFinite(maxInputAdCost) && maxInputAdCost > 0) {
+      roiBreakevenAdEl.textContent =
+        '在当前参数下，建议推广费 ≤ ' + formatMoney(maxInputAdCost) + ' / 单（保本上限）';
+    } else {
+      roiBreakevenAdEl.textContent =
+        '填写售价、成本和转化参数后，将展示对应的保本推广费。';
+    }
+
+    if (!isFinite(finalProfit)) {
+      roiGmvEl.style.color = '#15803d';
+      roiNote.textContent = '补充推广费与退款/退货率后，可看到平台 ROI 与保本 ROI 的对比关系。';
+    } else if (finalProfit < 0) {
+      roiGmvEl.style.color = "#ef4444";
+      roiNote.innerHTML =
+        `当前平台ROI <b>${formatRatio(currentPlatformROI)}</b> 低于保本线 <b>${formatRatio(breakevenROI)}</b>。<br>` +
+        `要保本，推广费需控制在 <b>${formatMoney(maxInputAdCost)}/单</b> 以内。`;
+    } else {
+      roiGmvEl.style.color = "#16a34a";
+      roiNote.innerHTML =
+        `当前平台ROI <b>${formatRatio(currentPlatformROI)}</b> 高于保本线 <b>${formatRatio(breakevenROI)}</b>，盈利状态。<br>` +
+        `理论上推广费涨到 <b>${formatMoney(maxInputAdCost)}/单</b> 才会归零保本。`;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const ids = [
+      'cost','ad-cost','shipping','loss','task-cost',
+      'commission','tax',
+      'refund-rate','return-rate',
+      'target-profit','competitor-price',
+      'discount','premium','final-price',
+      'newbie-coupon','single-discount','promo-discount'
+    ];
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.addEventListener('input',calculate);
+    });
+    calculate();
+  });
+</script>
+</body>
+</html>
